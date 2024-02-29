@@ -22,6 +22,9 @@ import GPy
 from scipy.optimize import minimize
 from scipy.stats import multivariate_normal
 
+# Time
+import time
+
 #### Pellejero-Ibáñez notes ####
 
 # Let us assume there is a set of values {x} for which we have evaluated the
@@ -60,6 +63,14 @@ space = Space([(0.5, 1.5), (0.5, 3.5)])#[(-10., 10.), (0., 15.)]) # Range the pa
 
 hammersly = Hammersly()
 ps = hammersly.generate(space.dimensions, n_samples) # Parameter space
+
+def parameter_space(n_samples, limits):
+    space = Space(limits)
+    hammersly = Hammersly()
+    ps = hammersly.generate(space.dimensions, n_samples)
+    return ps
+
+#ps = parameter_space(n_samples, [(0.5, 1.5), (0.5, 3.5)] )
 
 #print(space)
 #print(np.shape(space))
@@ -412,14 +423,14 @@ print("\n\nGP OPTIMISED MODEL\n ",gp_model)
 #gp_model.optimize()
 
 log_likelihood = gp_model.log_likelihood()
-print("\nLikelihoods of the initial 5 points: ", likelihoods)
+print("\nLikelihoods of the initial 10 points: ", likelihoods)
 print("\nEMULATED LIKELIHOOD: ", log_likelihood)
 
 
 
 # Extract optimized parameters
 mean, variance = gp_model.predict(X_train)  # Mean of the Gaussian process
-print("Emulated mean of the 5 training points: ", mean)
+print("Emulated mean of the 10 training points: ", mean)
 print("\nThe mean is similar to the likelihood values, so I assume this works.\n\n")
 # Generate new input data points
 
@@ -428,23 +439,42 @@ print("\nThe mean is similar to the likelihood values, so I assume this works.\n
 #! desde aquí de tiempo
 # Define a grid of points in the two-dimensional input space
 #! Volver a hacer un hammersley, con 5000 por ejemplo (si < 1s ok), hacer hammersley cambiando la seed: BUSCAR seed y buscar un número que vaya bien
-acool_values = np.linspace(0.5, 1.5, 100)
-gammasn_values = np.linspace(0.5, 3.5, 100)
-X_grid, Y_grid = np.meshgrid(acool_values, gammasn_values)
-XY_grid = np.column_stack((X_grid.ravel(), Y_grid.ravel()))
+start_time = time.time()
+
+n_grid=1000000
+grid = np.array(hammersly.generate(space.dimensions, n_grid)) # Grid for likelihoods
+#print(np.shape(grid), type(grid))
+acool_values = grid[:,0] #np.linspace(0.5, 1.5, 100)
+gammasn_values = grid[:,1] # np.linspace(0.5, 3.5, 100)
+#X_grid, Y_grid= np.meshgrid(acool_values, gammasn_values)
+#XY_grid = np.column_stack((X_grid.ravel(), Y_grid.ravel()))
+#print(type(XY_grid), np.shape(XY_grid))
+#exit()
 
 #coordinates: points where to predict the function.
-coordinates = XY_grid
+coordinates = grid #XY_grid
 
 res = gp_model.predict(coordinates)
 evalues, cov = (res[0].T)[0], (res[1].T)[0] #! Usar máximo (COMPROBAR) de los likelihoods ind = np.max(): por lo menos 3-> máximo + peor error (?)
-cov = np.abs(cov)
+#cov = np.abs(cov)
+
+end_time = time.time()
+
+# Calculate elapsed time
+elapsed_time = end_time - start_time
+print("Elapsed time finding the maximum likelihood: ", elapsed_time)
+
 #!hasta aquí de tiempo: pocos segundos debería ser, si no se rompe con 10000 pues 10000, cuantos más mejor
 # Now: find proposed points:
 
-ind = np.where(np.abs(log_likelihood-evalues)<10e-3)
-print("\n\nPrediction closer to the objective and variance:\n", evalues[ind], cov[ind], "\n\nNew coordinates:\n",coordinates[ind])
-print("\nEmulated prediction of the space: ", evalues, "emulated variance", cov)
+#ind = np.where(np.abs(log_likelihood-evalues)<10e-3)
+ind1 = np.argmax(np.abs(evalues))
+ind2 = np.argmax(cov)
+
+print("\n\nPrediction maximum likelihood:\nlikelihood = ", evalues[ind1]," variance = " ,cov[ind1], "\nNew coordinate:",coordinates[ind1])
+print("\n\nPrediction biggest error:\nlikelihood = ", evalues[ind2]," variance = " ,cov[ind2], "\nNew coordinate:",coordinates[ind2])
+
+#print("\nEmulated prediction of the space: ", np.abs(evalues), "emulated variance", cov)
 
 """
 multivariate_normal.fit
@@ -469,8 +499,12 @@ Fit a multivariate normal distribution to data.
             Maximum likelihood estimate of the covariance matrix
 
 """
-#print(np.shape(res[1]))
-mv_normal = multivariate_normal.fit(log_likelihood)
+#print(np.shape(res[1]), res[1])
+#print(np.shape(log_likelihood))
+#print(log_likelihood)
+#exit()
+mv_normal = multivariate_normal.fit(res[1]) #multivariate_normal.fit(log_likelihood)
+#print(mv_normal)
 print("\nMaximum likelihood estimate of the mean vector:", mv_normal[0], "\nMaximum likelihood estimate of the covariance matrix", mv_normal[1])
 
 # 5. ITERATION
