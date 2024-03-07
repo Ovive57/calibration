@@ -141,8 +141,8 @@ mod = model(a_cool,gamma_sn,4) ## mod[i][j][k] where i is the number of points i
 #exit()
 ## MY "OBSERVED" DATA:
 
-obs_acool = 0.8
-obs_gammasn = 3.2
+obs_acool = 1.2 #0.8
+obs_gammasn = 0.6 #3.2
 #param_c = 0.8
 
 obs_model = model(obs_acool,obs_gammasn, 4) ## obs_model[0][i] where i in range nvalues, number of properties that we have, such as mass, luminosity, sfr, ...
@@ -178,7 +178,7 @@ def mass_function(prop): #, prop2, prop3, prop4, prop5):
 
 
 ### A column with the function evaluated in all my hammersley initial points:
-
+"""
 f = []
 for i in range(n_samples):
     ff = mass_function(mod[i][0])
@@ -206,7 +206,7 @@ f_obs = mass_function(obs_smass) # The function evaluated in the observed point
 #print(np.shape(f_obs.reshape(-1,)))
 #plt.show()
 #print(np.shape(f_obs))
-
+"""
 #!!!!!! X is the space of parameters X = [[a1, b1],
 # !                                       [a2, b2],
 # !                                       [a3, b3],
@@ -342,10 +342,10 @@ def convergence(nup, nuq, covp, covq, dimension):
     
 
     """
-    print(np.shape(covp))
-    print(np.shape(covq))
-    print(np.shape(nup))
-    print(np.shape(nuq))
+    #print(np.shape(covp))
+    #print(np.shape(covq))
+    #print(np.shape(nup))
+    #print(np.shape(nuq))
     D = (1/2)*(np.log(np.linalg.det(covp)/np.linalg.det(covq)) - dimension + np.matrix.trace(np.linalg.inv(covq)*covp) + np.transpose(nuq - nup)*np.linalg.inv(covq)*(nuq-nup)) #! No puedo restar la media training que tiene solo 5 con la media de toda la grid que son 100x100, quizá lo tengo que hacer al menos 2 veces antes de mirar esto
     return D
 
@@ -469,7 +469,7 @@ print("Elapsed time finding the maximum likelihood: ", elapsed_time)
 
 #ind = np.where(np.abs(log_likelihood-evalues)<10e-3)
 ind1 = np.argmax(np.abs(evalues))
-ind2 = np.argmax(cov)
+ind2 = np.argmax(np.abs(cov))
 
 print("\n\nPrediction maximum likelihood:\nlikelihood = ", evalues[ind1]," variance = " ,cov[ind1], "\nNew coordinate:",coordinates[ind1])
 print("\n\nPrediction biggest error:\nlikelihood = ", evalues[ind2]," variance = " ,cov[ind2], "\nNew coordinate:",coordinates[ind2])
@@ -503,13 +503,101 @@ Fit a multivariate normal distribution to data.
 #print(np.shape(log_likelihood))
 #print(log_likelihood)
 #exit()
-mv_normal = multivariate_normal.fit(res[1]) #multivariate_normal.fit(log_likelihood)
+print(res[0])
+mv_normal = multivariate_normal.fit(res[0]) #multivariate_normal.fit(log_likelihood)
 #print(mv_normal)
 print("\nMaximum likelihood estimate of the mean vector:", mv_normal[0], "\nMaximum likelihood estimate of the covariance matrix", mv_normal[1])
 
 # 5. ITERATION
+print(np.shape(X_train))
+print(coordinates[ind2])
+X = np.append(X_train,[coordinates[ind1]])
+X = np.append(X, [coordinates[ind2]]).reshape(-1,2)
+
+for n in range (100):
+    likelihoods = []
+    obs_properties = model(obs_acool, obs_gammasn, 4)
+    obs_function = mass_function(obs_properties[:][0][0])
+
+    #plt.plot(f_obs, 'b-', label='Observed Function')
+
+    for parameters in X:
+        properties = model(parameters[0], parameters[1], 4)
+        function = mass_function(properties[:][0][0]) # Taking only the first one as it is the mass for example
+        likelihood = evaluate_likelihood(obs_function, function,0.2)
+        likelihoods.append(np.sum(likelihood))
+
+    y = np.array(likelihoods).reshape(-1,1)
+    
+    gp_model = GPy.models.GPRegression(X,y, kernel=kernel)
+
+    # Specify the likelihood function (Gaussian likelihood)
+    GP_likelihood = GPy.likelihoods.Gaussian()
+
+    # Set the likelihood function for the GP model
+    gp_model.likelihood = GP_likelihood
+
+    # Optimize the model using self.log_likelihood and self.log_likelihood_gradient,
+    # as well as self.priors. kwargs are passed to the optimizer.
+    # Specifying the optimization method (L-BFGS-B) and number of restarts
+    # L-BFGS-B stands for Limited-memory Broyden–Fletcher–Goldfarb–Shanno with Bound constraints.
+    gp_model.optimize('lbfgsb', messages=False)
+    gp_model.optimize_restarts(num_restarts=5, verbose=False, optimizer = 'lbfgsb')
+
+    # Optimize the model parameters to maximize the likelihood
+    #gp_model.optimize()
+
+    log_likelihood = gp_model.log_likelihood()
+
+    # Extract optimized parameters
+    mean, variance = gp_model.predict(X)  # Mean of the Gaussian process
 
 
+    # 4. Fit a multivariate Gaussian to the emulated likelihood and estimate the mean and covariance. We use these parameters to estimate the kullnack-Lieber divergence.
+    #! desde aquí de tiempo
+    # Define a grid of points in the two-dimensional input space
+    #! Volver a hacer un hammersley, con 5000 por ejemplo (si < 1s ok), hacer hammersley cambiando la seed: BUSCAR seed y buscar un número que vaya bien
+    start_time = time.time()
+
+    n_grid=1000000
+    grid = np.array(hammersly.generate(space.dimensions, n_grid)) # Grid for likelihoods
+    acool_values = grid[:,0] #np.linspace(0.5, 1.5, 100)
+    gammasn_values = grid[:,1] # np.linspace(0.5, 3.5, 100)
+
+    #coordinates: points where to predict the function.
+    coordinates = grid #XY_grid
+
+    res = gp_model.predict(coordinates)
+    evalues, cov = (res[0].T)[0], (res[1].T)[0] #! Usar máximo (COMPROBAR) de los likelihoods ind = np.max(): por lo menos 3-> máximo + peor error (?)
+    #cov = np.abs(cov)
+
+    end_time = time.time()
+
+    # Calculate elapsed time
+    elapsed_time = end_time - start_time
+    print("Elapsed time finding the maximum likelihood: ", elapsed_time)
+
+    #!hasta aquí de tiempo: pocos segundos debería ser, si no se rompe con 10000 pues 10000, cuantos más mejor
+    # Now: find proposed points:
+
+    #ind = np.where(np.abs(log_likelihood-evalues)<10e-3)
+    ind1 = np.argmax(np.abs(evalues))
+    ind2 = np.argmax(cov)
+
+    X = np.append(X, [coordinates[ind1]])
+    X = np.append(X, [coordinates[ind2]]).reshape(-1,2)
+    mv_normal_before = mv_normal
+    print(res[0])
+    print(evalues.reshape(-1,1))
+    mv_normal = multivariate_normal.fit(evalues.reshape(-1,1)) #multivariate_normal.fit(log_likelihood)
+
+    D = convergence(mv_normal_before[0], mv_normal[0], mv_normal_before[1],mv_normal[1], 2)
+    if D>0.01:
+        print("no converge aún")
+    else:
+        print("converge")
+        print(coordinates[ind1], coordinates[ind2])
+        break
 
 
 #print(np.shape(evalues))
