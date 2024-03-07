@@ -116,7 +116,7 @@ def plot_lm(model, dm,z=[0,1,2]):
             yhist_err = np.abs(np.log10(np.loadtxt(fileobs, skiprows=5, usecols=(3), unpack=True)))#*dm)
 
             plt.plot(hist_obs, yhist_obs, 'o', label = 'henriques_2014_z' + str(iz))
-            plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'orange')
+            #plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'orange')
 
             # Observations Baldry
             fileobs = '../Obs_Data/smf/baldry_2012_z0_cha.txt'
@@ -126,7 +126,7 @@ def plot_lm(model, dm,z=[0,1,2]):
             yhist_err = np.abs(np.log10(np.loadtxt(fileobs,skiprows=5, usecols = (3), unpack = True))-3*np.log10(h)-3)
 
             plt.plot(mass, yhist_obs, 'o', label = 'baldry_2012_z' + str(iz))
-            plt.errorbar(mass, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'limegreen')
+            #plt.errorbar(mass, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'limegreen')
 
 
             # Observations Moustakas
@@ -141,7 +141,7 @@ def plot_lm(model, dm,z=[0,1,2]):
             yhist_err = np.abs(np.log10(np.loadtxt(fileobs,skiprows=5, usecols = (3), unpack = True)))
 
             plt.plot(hist_obs, yhist_obs, 'o', label = 'moustakas_2013_z' + str(iz))
-            plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'red')
+            #plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'red')
 
             # Observations Ilbert
             fileobs = '../Obs_Data/smf/muzzin_ilbert_z0.2_z0.5.smf'
@@ -155,7 +155,7 @@ def plot_lm(model, dm,z=[0,1,2]):
             yhist_err = np.loadtxt(fileobs,skiprows=4, usecols = (3), unpack = True)
 
             plt.plot(hist_obs, yhist_obs, 'o', label = 'ilbert_2013_z' + str(iz))
-            plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'purple')
+            #plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'purple')
 
 
         if iz==1:
@@ -170,7 +170,7 @@ def plot_lm(model, dm,z=[0,1,2]):
             yhist_obs = np.loadtxt(fileobs,skiprows=4, usecols = (2), unpack = True)
             yhist_err = np.abs(np.log10(np.loadtxt(fileobs,skiprows=5, usecols = (3), unpack = True)))
             plt.plot(hist_obs, yhist_obs, 'o', label = 'moustakas_2013_z' + str(iz))
-            plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'orange')
+            #plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'orange')
 
             # Observations Ilbert
             fileobs = '../Obs_Data/smf/muzzin_ilbert_z0.5_z1.1.smf'
@@ -184,7 +184,7 @@ def plot_lm(model, dm,z=[0,1,2]):
             yhist_err = np.loadtxt(fileobs,skiprows=4, usecols = (3), unpack = True)
 
             plt.plot(hist_obs, yhist_obs, 'o', label = 'ilbert_2013_z' + str(iz))
-            plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'limegreen')
+            #plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'limegreen')
 
 
         if iz==2:
@@ -200,7 +200,7 @@ def plot_lm(model, dm,z=[0,1,2]):
             yhist_err = np.abs(np.log10(np.loadtxt(fileobs, skiprows=5, usecols=(3), unpack=True)))#*dm)
 
             plt.plot(hist_obs, yhist_obs, 'o', label = 'henriques_2014_z' + str(iz))
-            plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'orange')
+            #plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'orange')
 
 
             # Observations Ilbert
@@ -215,13 +215,13 @@ def plot_lm(model, dm,z=[0,1,2]):
             yhist_err = np.loadtxt(fileobs,skiprows=4, usecols = (3), unpack = True)
 
             plt.plot(hist_obs, yhist_obs, 'o', label = 'ilbert_2013_z' + str(iz))
-            plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'limegreen')
+            #plt.errorbar(hist_obs, yhist_obs, yhist_err,fmt='none', elinewidth=None, ecolor = 'limegreen')
 
         plt.legend()
         plt.savefig('/home/olivia/calibration/calibration/plots/lm_z'+ str(iz)+'.pdf')
         plt.show()
 
-#plot_lm(['shark'],0.25, z=[0,1,2])
+plot_lm(['shark'],0.25, z=[0,1,2])
 #exit()
 
 def plot_sfr(model, dsfr,z=[0,1,2]):
@@ -326,8 +326,8 @@ def plot_sfr(model, dsfr,z=[0,1,2]):
         plt.savefig('/home/olivia/calibration/calibration/plots/sfr_z'+ str(iz)+'.pdf')
         plt.show()
 
-#plot_sfr(['shark',], 0.25, z = [0,1,2])
-#exit()
+plot_sfr(['shark',], 0.25, z = [0,1,2])
+exit()
 
 
 def plot_BHSM(model, dbulge, dbh, z=0):
